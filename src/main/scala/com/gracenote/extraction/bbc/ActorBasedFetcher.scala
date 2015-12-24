@@ -23,27 +23,19 @@ object ActorBasedFetcher extends App {
   val from = DateTime.parse(args(0))
   val to = DateTime.parse(args(1))
   require(from.isBefore(to), "Start date must be before end date")
+  val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("/providers.txt")).getLines()
 
-  startUp(from, to)
+  val coordinator = startUpCoordinator(new File("schedules.csv"), Rate(90, 1 second))
 
-  def startUp(from: DateTime, to: DateTime) = {
-    val ws = new NingWSClient(new Builder().build())
-    val outputFile = new File("schedules.csv")
-    val rate = Rate(90, 1 second)
+  serviceIds map (id => ScheduleRequest(id, from, to)) foreach (request => coordinator ! request)
 
-    val system = ActorSystem("Schedules")
-    val coordinator = system.actorOf(Props(new Coordinator(ws, outputFile, rate)))
 
-    val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("/providers.txt")).getLines()
-
-    serviceIds map (id => ScheduleRequest(id, from, to)) foreach (request => coordinator ! request)
-  }
+  def startUpCoordinator(outputFile: File, rate: Rate) =
+    ActorSystem("Schedules").actorOf(Props(new Coordinator(outputFile, rate)))
 }
 
 object Protocol {
-  trait Retryable {
-    def nextTry: Retryable
-  }
+  trait Retryable { def nextTry: Retryable }
   case class ProgramAvailabilityRequest(program: ScheduledProgram, retryAttempt: Int = 0) extends Retryable {
     def nextTry = copy(retryAttempt = retryAttempt + 1)
   }
@@ -60,8 +52,8 @@ object Protocol {
   case class Retry(request: Retryable)
 }
 
-class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor with ActorLogging {
-  val fetcher = context.actorOf(Props(new Fetcher(ws)))
+class Coordinator(outputFile: File, rate: Rate) extends Actor with ActorLogging {
+  val fetcher = context.actorOf(Props(new ScheduleFetcher()))
   val throttler = context.actorOf(Props(new TimerBasedThrottler(rate)))
   val writer = context.actorOf(Props(new FileWriter(outputFile)))
   throttler ! SetTarget(Some(fetcher))
@@ -80,18 +72,12 @@ class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor 
 
     case UnrecoverableError(request, message) =>
       log.warning(s"Error: '$message' while processing $request")
-
-    case _: Shutdown =>
-      context.stop(throttler)
-      context.stop(fetcher)
-      context.stop(writer)
-      context.stop(self)
   }
 }
 
 
-class Fetcher(ws: NingWSClient) extends Actor with ActorLogging {
-  require(ws != null)
+class ScheduleFetcher() extends Actor with ActorLogging {
+  var ws: NingWSClient = null
   val maxRetries = 3
 
   override def receive: Receive = {
@@ -109,24 +95,33 @@ class Fetcher(ws: NingWSClient) extends Actor with ActorLogging {
       sender() ! toAvailabilityResponse(request, program, wsResponse)
 
     case request@ProgramAvailabilityRequest(_, retry) if retry < maxRetries =>
-      scheduleRetry(request.nextTry, retry)
+      scheduleRetry(request, retry)
 
     case Retry(request) =>
-      log.warning(s"retrying request $request")
-      self ! request
+      log.warning(s"retrying request ${request.nextTry}")
+      self ! request.nextTry
+  }
 
-    case _: Shutdown =>
-      ws.close()
-      context.stop(self)
+  override def postStop(): Unit = {
+    ws.close()
+    super.postStop()
+  }
+
+  override def preStart(): Unit = {
+    super.preStart()
+    ws = new NingWSClient(new Builder().build())
   }
 
   private def scheduleRetry(request: Retryable, retry: Int): Unit = {
-    log.warning(s"scheduling $retry retry for request $request")
+    val delay = Math.pow(3, retry) seconds
+
+    log.warning(s"scheduling $retry retry in ${delay.toSeconds} seconds for request $request")
+
     import context.dispatcher
-    context.system.scheduler.scheduleOnce(Math.pow(3, retry) seconds, self, Retry(request))
+    context.system.scheduler.scheduleOnce(delay, self, Retry(request))
   }
 
-  private def toScheduleResponse(request: ScheduleRequest, wsResponse: WSResponse): Product with Serializable =
+  private def toScheduleResponse(request: ScheduleRequest, wsResponse: WSResponse) =
     if (wsResponse.status == Status.OK) ScheduleResponse(
       toProgramList(wsResponse.xml),
       toNumberOfPages(wsResponse.xml),
@@ -207,9 +202,10 @@ class FileWriter(outputFile: File) extends Actor {
   override def receive: Receive = {
     case program: ScheduledProgram =>
       csvWriter.writeRow(Seq(program.sid, program.pid, program.title, program.startTime, program.endTime))
+  }
 
-    case _: Shutdown =>
-      csvWriter.close()
-      context.stop(self)
+  override def postStop() {
+    csvWriter.close()
+    super.postStop()
   }
 }
