@@ -1,5 +1,4 @@
-package com.gracenote.extraction.bbc
-
+package com.gracenote.extraction.bbc.original
 
 import scala.util.Try
 import scala.xml.Node
