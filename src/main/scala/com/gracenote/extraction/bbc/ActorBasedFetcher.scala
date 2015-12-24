@@ -7,7 +7,7 @@ import akka.contrib.throttle.Throttler.{Rate, SetTarget}
 import akka.contrib.throttle.TimerBasedThrottler
 import com.github.tototoshi.csv.CSVWriter
 import com.gracenote.extraction.bbc.Protocol._
-import com.ning.http.client.AsyncHttpClientConfig
+import com.ning.http.client.AsyncHttpClientConfig.Builder
 import org.joda.time.DateTime
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.ning.NingWSClient
@@ -24,16 +24,21 @@ object ActorBasedFetcher extends App {
   val to = DateTime.parse(args(1))
   require(from.isBefore(to), "Start date must be before end date")
 
-  val ws = new NingWSClient(new AsyncHttpClientConfig.Builder().build())
-  val outputFile = new File("schedules.csv")
-  val rate = Rate(90, 1 second)
+  startUp()
 
-  val system = ActorSystem("Schedules")
-  val coordinator = system.actorOf(Props(new Coordinator(ws, outputFile, rate)))
 
-  private val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("providers.txt")).getLines()
+  def startUp() = {
+    val ws = new NingWSClient(new Builder().build())
+    val outputFile = new File("schedules.csv")
+    val rate = Rate(90, 1 second)
 
-  serviceIds map (id => ProgramRequest(id, from, to)) foreach (request => coordinator ! request)
+    val system = ActorSystem("Schedules")
+    val coordinator = system.actorOf(Props(new Coordinator(ws, outputFile, rate)))
+
+    val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("providers.txt")).getLines()
+
+    serviceIds map (id => ProgramRequest(id, from, to)) foreach (request => coordinator ! request)
+  }
 }
 
 object Protocol {
@@ -45,8 +50,6 @@ object Protocol {
   case class ProgramResponse(programs: Seq[ScheduledProgram], totalPages: Int, request: ProgramRequest) {
     def nextPageRequest = if (request.pageToFetch < totalPages) Some(request.copy(pageToFetch = request.pageToFetch + 1)) else None
   }
-  case class RecoverableError(request: Any)
-  case class UnrecoverableError(request: Any)
 }
 
 class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor with ActorLogging {
@@ -67,11 +70,14 @@ class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor 
     case ProgramAvailabilityResponse(program, isAvailable) if isAvailable =>
       writer ! program
 
-    // VG maybe introduce an error-tracking actor
-    case Left(body) => log.warning(s"********************** Error: $body")
+    case Left(body) =>
+      log.warning(s"********************** Error: $body")
 
-    case _: Shutdown => context.stop(self)
-
+    case _: Shutdown =>
+      context.stop(throttler)
+      context.stop(fetcher)
+      context.stop(writer)
+      context.stop(self)
   }
 }
 
