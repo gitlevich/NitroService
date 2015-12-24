@@ -9,7 +9,7 @@ import com.github.tototoshi.csv.CSVWriter
 import com.gracenote.extraction.bbc.Protocol._
 import com.ning.http.client.AsyncHttpClientConfig.Builder
 import org.joda.time.DateTime
-import play.api.libs.ws.WSRequest
+import play.api.libs.ws._
 import play.api.libs.ws.ning.NingWSClient
 import play.mvc.Http.Status
 
@@ -24,10 +24,9 @@ object ActorBasedFetcher extends App {
   val to = DateTime.parse(args(1))
   require(from.isBefore(to), "Start date must be before end date")
 
-  startUp()
+  startUp(from, to)
 
-
-  def startUp() = {
+  def startUp(from: DateTime, to: DateTime) = {
     val ws = new NingWSClient(new Builder().build())
     val outputFile = new File("schedules.csv")
     val rate = Rate(90, 1 second)
@@ -35,21 +34,30 @@ object ActorBasedFetcher extends App {
     val system = ActorSystem("Schedules")
     val coordinator = system.actorOf(Props(new Coordinator(ws, outputFile, rate)))
 
-    val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("providers.txt")).getLines()
+    val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("/providers.txt")).getLines()
 
-    serviceIds map (id => ProgramRequest(id, from, to)) foreach (request => coordinator ! request)
+    serviceIds map (id => ScheduleRequest(id, from, to)) foreach (request => coordinator ! request)
   }
 }
 
 object Protocol {
-  case class ProgramAvailabilityRequest(program: ScheduledProgram)
+  trait Retryable {
+    def nextTry: Retryable
+  }
+  case class ProgramAvailabilityRequest(program: ScheduledProgram, retryAttempt: Int = 0) extends Retryable {
+    def nextTry = copy(retryAttempt = retryAttempt + 1)
+  }
   case class ProgramAvailabilityResponse(program: ScheduledProgram, isAvailable: Boolean)
   case class ScheduledProgram(sid: String, pid: String, startTime: String, endTime: String, title: String)
   case class Shutdown()
-  case class ProgramRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int = 1)
-  case class ProgramResponse(programs: Seq[ScheduledProgram], totalPages: Int, request: ProgramRequest) {
+  case class ScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int = 1, retryAttempt: Int = 0) extends Retryable {
+    def nextTry = copy(retryAttempt = retryAttempt + 1)
+  }
+  case class ScheduleResponse(programs: Seq[ScheduledProgram], totalPages: Int, request: ScheduleRequest) {
     def nextPageRequest = if (request.pageToFetch < totalPages) Some(request.copy(pageToFetch = request.pageToFetch + 1)) else None
   }
+  case class UnrecoverableError(request: Any, message: String)
+  case class Retry(request: Retryable)
 }
 
 class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor with ActorLogging {
@@ -59,9 +67,9 @@ class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor 
   throttler ! SetTarget(Some(fetcher))
 
   override def receive: Receive = {
-    case request: ProgramRequest => throttler ! request
+    case request: ScheduleRequest => throttler ! request
 
-    case Right(response@ProgramResponse(programs, totalPages, _)) =>
+    case response@ScheduleResponse(programs, totalPages, _) =>
       programs.foreach { p => throttler ! ProgramAvailabilityRequest(p) }
       response.nextPageRequest.foreach { nextPageRequest =>
         throttler ! nextPageRequest
@@ -70,8 +78,8 @@ class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor 
     case ProgramAvailabilityResponse(program, isAvailable) if isAvailable =>
       writer ! program
 
-    case Left(body) =>
-      log.warning(s"********************** Error: $body")
+    case UnrecoverableError(request, message) =>
+      log.warning(s"Error: '$message' while processing $request")
 
     case _: Shutdown =>
       context.stop(throttler)
@@ -82,40 +90,59 @@ class Coordinator(ws: NingWSClient, outputFile: File, rate: Rate) extends Actor 
 }
 
 
-class Fetcher(ws: NingWSClient) extends Actor {
+class Fetcher(ws: NingWSClient) extends Actor with ActorLogging {
   require(ws != null)
+  val maxRetries = 3
 
   override def receive: Receive = {
-    case programRequest@ProgramRequest(serviceId, from, to, pageToFetch) =>
-      val request = createScheduleRequest(serviceId, from, to, pageToFetch)
-      val response = Await.result(request.get(), 120 seconds)
+    case request@ScheduleRequest(serviceId, from, to, pageToFetch, 0) =>
+      val wsRequest = createScheduleRequest(serviceId, from, to, pageToFetch)
+      val wsResponse = Await.result(wsRequest.get(), 120 seconds)
+      sender() ! toScheduleResponse(request, wsResponse)
 
-      val result =
-        if (response.status == Status.OK) Right(ProgramResponse(
-          toProgramList(response.xml),
-          toNumberOfPages(response.xml),
-          programRequest))
-        else Left(response.body)
+    case request@ScheduleRequest(_, _, _, _, retry) if retry < maxRetries =>
+      scheduleRetry(request, retry)
 
-      sender() ! result
+    case request@ProgramAvailabilityRequest(program, 0) =>
+      val wsRequest = createAvailabilityRequest(program)
+      val wsResponse = Await.result(wsRequest.get(), 120 seconds)
+      sender() ! toAvailabilityResponse(request, program, wsResponse)
 
-    case ProgramAvailabilityRequest(program) =>
-      val request = createAvailabilityRequest(program)
-      val response = Await.result(request.get(), 120 seconds)
+    case request@ProgramAvailabilityRequest(_, retry) if retry < maxRetries =>
+      scheduleRetry(request.nextTry, retry)
 
-      val result =
-        if (response.status == Status.OK)
-          toProgramAvailabilityResponse(program, response.xml)
-        else ProgramAvailabilityResponse(program, isAvailable = false)
-
-      sender() ! result
+    case Retry(request) =>
+      log.warning(s"retrying request $request")
+      self ! request
 
     case _: Shutdown =>
       ws.close()
       context.stop(self)
   }
 
-  def createAvailabilityRequest(program: ScheduledProgram): WSRequest = {
+  private def scheduleRetry(request: Retryable, retry: Int): Unit = {
+    log.warning(s"scheduling $retry retry for request $request")
+    import context.dispatcher
+    context.system.scheduler.scheduleOnce(Math.pow(3, retry) seconds, self, Retry(request))
+  }
+
+  private def toScheduleResponse(request: ScheduleRequest, wsResponse: WSResponse): Product with Serializable =
+    if (wsResponse.status == Status.OK) ScheduleResponse(
+      toProgramList(wsResponse.xml),
+      toNumberOfPages(wsResponse.xml),
+      request)
+    else if (recoverableError(wsResponse))
+      request.nextTry
+    else UnrecoverableError(request, wsResponse.body)
+
+  private def toAvailabilityResponse(request: ProgramAvailabilityRequest, program: ScheduledProgram, wsResponse: WSResponse) =
+    if (wsResponse.status == Status.OK)
+      toProgramAvailabilityResponse(program, wsResponse.xml)
+    else if (recoverableError(wsResponse))
+      request.nextTry
+    else ProgramAvailabilityResponse(program, isAvailable = false)
+
+  private def createAvailabilityRequest(program: ScheduledProgram): WSRequest = {
     ws.url("http://programmes.api.bbc.com/nitro/api/programmes")
       .withQueryString("pid" -> program.pid)
       .withQueryString("availability" -> "available")
@@ -126,16 +153,20 @@ class Fetcher(ws: NingWSClient) extends Actor {
       .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
   }
 
-  def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int): WSRequest = {
+  private def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int): WSRequest =
     ws.url("http://programmes.api.bbc.com/nitro/api/schedules")
-      .withQueryString("page" -> pageToFetch.toString)
-      .withQueryString("sort" -> "start_date")
-      .withQueryString("schedule_day_from" -> from.toString("YYYY-MM-dd"))
-      .withQueryString("schedule_day_to" -> to.toString("YYYY-MM-dd"))
-      .withQueryString("sid" -> serviceId)
-      .withQueryString("mixin" -> "ancestor_titles")
-      .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
-  }
+    .withQueryString("page" -> pageToFetch.toString)
+    .withQueryString("sort" -> "start_date")
+    .withQueryString("schedule_day_from" -> from.toString("YYYY-MM-dd"))
+    .withQueryString("schedule_day_to" -> to.toString("YYYY-MM-dd"))
+    .withQueryString("sid" -> serviceId)
+    .withQueryString("mixin" -> "ancestor_titles")
+    .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
+
+  private def recoverableError(wsResponse: WSResponse): Boolean =
+    wsResponse.status == Status.INTERNAL_SERVER_ERROR ||
+      wsResponse.status == Status.REQUEST_TIMEOUT ||
+      wsResponse.status == Status.GATEWAY_TIMEOUT
 
   private def toProgramAvailabilityResponse(program: ScheduledProgram, node: Node) =
     ProgramAvailabilityResponse(program, if ((node \ "results" \ "@total").text == "0") false else true)

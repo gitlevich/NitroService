@@ -5,13 +5,13 @@ import org.joda.time.DateTime
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
 
-class ProgramResponseTest extends WordSpecLike with Matchers with MockitoSugar {
+class ScheduleResponseTest extends WordSpecLike with Matchers with MockitoSugar {
 
   "ProgramResponse" should {
 
     "calculate just next page request" in {
-      val request1 = ProgramRequest("abc", DateTime.parse("2015-12-01"), DateTime.parse("2015-12-02"))
-      val response = ProgramResponse(Seq.empty[ScheduledProgram], totalPages = 4, request1)
+      val request1 = ScheduleRequest("abc", DateTime.parse("2015-12-01"), DateTime.parse("2015-12-02"))
+      val response = ScheduleResponse(Seq.empty[ScheduledProgram], totalPages = 4, request1)
 
       val request2 = request1.copy(pageToFetch = 2)
       assert(Some(request1.copy(pageToFetch = 2)) === response.nextPageRequest)
