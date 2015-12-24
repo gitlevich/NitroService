@@ -5,40 +5,13 @@ import java.io.File
 import akka.actor.{Actor, ActorRef, FSM, PoisonPill, Props}
 import akka.contrib.throttle.Throttler.{Rate, SetTarget}
 import akka.contrib.throttle.TimerBasedThrottler
-import com.gracenote.extraction.bbc.akka.Coordinator.Message._
+import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
 import com.gracenote.extraction.bbc.akka.FileWriter.OpenFile
-import com.gracenote.extraction.bbc.akka.ScheduleFetcher.StartUp
+import com.gracenote.extraction.bbc.akka.ScheduleFetcher.Protocol.StartUp
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
-
-private [bbc] object Coordinator {
-  sealed trait State
-  case object Idle extends State
-  case object Active extends State
-
-  case class Stats()
-
-  case class ScheduledProgram(sid: String, pid: String, startTime: String, endTime: String, title: String)
-
-  trait Retryable { def nextTry: Retryable }
-  object Message {
-    case class StartExtraction(file: File, rate: Rate)
-    case class ProgramAvailabilityRequest(program: ScheduledProgram, retryAttempt: Int = 0) extends Retryable {
-      def nextTry = copy(retryAttempt = retryAttempt + 1)
-    }
-    case class ProgramAvailabilityResponse(program: ScheduledProgram, isAvailable: Boolean)
-    case class ScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int = 1, retryAttempt: Int = 0) extends Retryable {
-      def nextTry = copy(retryAttempt = retryAttempt + 1)
-    }
-    case class ScheduleResponse(programs: Seq[ScheduledProgram], totalPages: Int, request: ScheduleRequest) {
-      def nextPageRequest = if (request.pageToFetch < totalPages) Some(request.copy(pageToFetch = request.pageToFetch + 1)) else None
-    }
-    case class UnrecoverableError(request: Any, message: String)
-  }
-}
-
 
 class Coordinator() extends Actor with FSM[State, Stats] {
   startWith(Idle, Stats())
@@ -74,7 +47,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
       stay()
 
     case Event(ProgramAvailabilityResponse(program, isAvailable), Stats()) =>
-      if(isAvailable) writer ! program else log.info(s"$program is not available")
+      if (isAvailable) writer ! program else log.info(s"$program is not available")
       stay()
 
     case Event(UnrecoverableError(request, message), Stats()) =>
@@ -96,5 +69,34 @@ class Coordinator() extends Actor with FSM[State, Stats] {
   }
 
   initialize()
+}
+
+
+private[bbc] object Coordinator {
+
+  sealed trait State
+  case object Idle extends State
+  case object Active extends State
+
+  case class Stats()
+
+  case class ScheduledProgram(sid: String, pid: String, startTime: String, endTime: String, title: String)
+
+  trait Retryable {def nextTry: Retryable}
+
+  object Protocol {
+    case class StartExtraction(file: File, rate: Rate)
+    case class ProgramAvailabilityRequest(program: ScheduledProgram, retryAttempt: Int = 0) extends Retryable {
+      def nextTry = copy(retryAttempt = retryAttempt + 1)
+    }
+    case class ProgramAvailabilityResponse(program: ScheduledProgram, isAvailable: Boolean)
+    case class ScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int = 1, retryAttempt: Int = 0) extends Retryable {
+      def nextTry = copy(retryAttempt = retryAttempt + 1)
+    }
+    case class ScheduleResponse(programs: Seq[ScheduledProgram], totalPages: Int, request: ScheduleRequest) {
+      def nextPageRequest = if (request.pageToFetch < totalPages) Some(request.copy(pageToFetch = request.pageToFetch + 1)) else None
+    }
+    case class UnrecoverableError(request: Any, message: String)
+  }
 }
 

@@ -4,7 +4,7 @@ import java.io.File
 
 import akka.actor._
 import akka.contrib.throttle.Throttler.Rate
-import com.gracenote.extraction.bbc.akka.Coordinator.Message._
+import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._

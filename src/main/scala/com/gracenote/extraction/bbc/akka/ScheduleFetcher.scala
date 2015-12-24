@@ -1,8 +1,9 @@
 package com.gracenote.extraction.bbc.akka
 
 import akka.actor._
-import com.gracenote.extraction.bbc.akka.Coordinator.Message._
+import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
+import com.gracenote.extraction.bbc.akka.ScheduleFetcher.Protocol._
 import com.gracenote.extraction.bbc.akka.ScheduleFetcher._
 import com.ning.http.client.AsyncHttpClientConfig.Builder
 import org.joda.time.DateTime
@@ -14,19 +15,12 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.xml.Node
 
-object ScheduleFetcher {
-  case class Retry(request: Retryable)
-  case class StartUp()
-}
-
-
 class ScheduleFetcher() extends Actor with ActorLogging {
   private var ws: NingWSClient = null
-  val maxRetries = 3
 
   override def receive: Receive = {
     case request@ScheduleRequest(serviceId, from, to, pageToFetch, 0) =>
-      val wsRequest = createScheduleRequest(serviceId, from, to, pageToFetch)
+      val wsRequest = createScheduleRequest(serviceId, from, to, pageToFetch, ws)
       val wsResponse = Await.result(wsRequest.get(), 120 seconds)
       sender() ! toScheduleResponse(request, wsResponse)
 
@@ -34,7 +28,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
       scheduleRetry(request, retry)
 
     case request@ProgramAvailabilityRequest(program, 0) =>
-      val wsRequest = createAvailabilityRequest(program)
+      val wsRequest = createAvailabilityRequest(program, ws)
       val wsResponse = Await.result(wsRequest.get(), 120 seconds)
       sender() ! toAvailabilityResponse(request, program, wsResponse)
 
@@ -63,8 +57,18 @@ class ScheduleFetcher() extends Actor with ActorLogging {
     import context.dispatcher
     context.system.scheduler.scheduleOnce(delay, self, Retry(request))
   }
+}
 
-  private def toScheduleResponse(request: ScheduleRequest, wsResponse: WSResponse) =
+
+object ScheduleFetcher {
+  val maxRetries = 3
+
+  object Protocol {
+    case class Retry(request: Retryable)
+    case class StartUp()
+  }
+
+  def toScheduleResponse(request: ScheduleRequest, wsResponse: WSResponse) =
     if (wsResponse.status == Status.OK) ScheduleResponse(
       toProgramList(wsResponse.xml),
       toNumberOfPages(wsResponse.xml),
@@ -73,14 +77,14 @@ class ScheduleFetcher() extends Actor with ActorLogging {
       request.nextTry
     else UnrecoverableError(request, wsResponse.body)
 
-  private def toAvailabilityResponse(request: ProgramAvailabilityRequest, program: ScheduledProgram, wsResponse: WSResponse) =
+  def toAvailabilityResponse(request: ProgramAvailabilityRequest, program: ScheduledProgram, wsResponse: WSResponse) =
     if (wsResponse.status == Status.OK)
       toProgramAvailabilityResponse(program, wsResponse.xml)
     else if (recoverableError(wsResponse))
       request.nextTry
     else ProgramAvailabilityResponse(program, isAvailable = false)
 
-  private def createAvailabilityRequest(program: ScheduledProgram): WSRequest = {
+  def createAvailabilityRequest(program: ScheduledProgram, ws: NingWSClient): WSRequest = {
     ws.url("http://programmes.api.bbc.com/nitro/api/programmes")
       .withQueryString("pid" -> program.pid)
       .withQueryString("availability" -> "available")
@@ -91,7 +95,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
       .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
   }
 
-  private def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int): WSRequest =
+  def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int, ws: NingWSClient): WSRequest =
     ws.url("http://programmes.api.bbc.com/nitro/api/schedules")
       .withQueryString("page" -> pageToFetch.toString)
       .withQueryString("sort" -> "start_date")
@@ -101,19 +105,19 @@ class ScheduleFetcher() extends Actor with ActorLogging {
       .withQueryString("mixin" -> "ancestor_titles")
       .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
 
-  private def recoverableError(wsResponse: WSResponse): Boolean =
+  def recoverableError(wsResponse: WSResponse): Boolean =
     wsResponse.status == Status.INTERNAL_SERVER_ERROR ||
       wsResponse.status == Status.REQUEST_TIMEOUT ||
       wsResponse.status == Status.GATEWAY_TIMEOUT
 
-  private def toProgramAvailabilityResponse(program: ScheduledProgram, node: Node) =
+  def toProgramAvailabilityResponse(program: ScheduledProgram, node: Node) =
     ProgramAvailabilityResponse(program, if ((node \ "results" \ "@total").text == "0") false else true)
 
 
-  private def toProgramList(page: Node): Seq[ScheduledProgram] =
+  def toProgramList(page: Node): Seq[ScheduledProgram] =
     (page \\ "broadcast").map(node => toProgram(node))
 
-  private def toProgram(node: Node) = ScheduledProgram(
+  def toProgram(node: Node) = ScheduledProgram(
     (node \ "service" \ "@sid").text,
     toEpisodePid(node),
     (node \ "published_time" \ "@start").text,
@@ -123,13 +127,13 @@ class ScheduleFetcher() extends Actor with ActorLogging {
       (node \ "ancestor_titles" \ "episode" \ "title").text
   )
 
-  private def toEpisodePid(node: Node) = {
+  def toEpisodePid(node: Node) = {
     val element = node \ "broadcast_of"
     val episodeElement = element.filter(element => (element \ "@result_type").text == "episode")
     (episodeElement \ "@pid").text
   }
 
-  private def toNumberOfPages(node: Node) = {
+  def toNumberOfPages(node: Node) = {
     val totalProgrammes = (node \\ "results" \ "@total").text.toInt
     val pageSize = (node \\ "results" \ "@page_size").text.toInt
 

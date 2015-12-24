@@ -1,6 +1,6 @@
 package com.gracenote.extraction.bbc.akka
 
-import com.gracenote.extraction.bbc.akka.Coordinator.Message._
+import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
 import org.joda.time.DateTime
 import org.scalatest.mock.MockitoSugar
