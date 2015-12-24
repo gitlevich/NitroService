@@ -3,7 +3,7 @@ package com.gracenote.extraction.bbc
 import java.lang.Math
 import javax.xml.ws.WebServiceException
 
-import akka.util.Timeout
+import _root_.akka.util.Timeout
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.mvc.Http.Status
 
