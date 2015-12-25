@@ -134,7 +134,16 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
 
       expectNoMsg
     }
+  }
 
+  "fetcher" should {
+    import scala.concurrent.duration._
+
+    "calculate delay for retries in exponential fashion" in {
+      ScheduleFetcher.calculateDelay(1) shouldBe 3.seconds
+      ScheduleFetcher.calculateDelay(2) shouldBe 9.seconds
+      ScheduleFetcher.calculateDelay(3) shouldBe 27.seconds
+    }
   }
 
 

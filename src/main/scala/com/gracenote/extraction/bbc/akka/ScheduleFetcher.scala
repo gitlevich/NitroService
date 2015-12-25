@@ -17,6 +17,7 @@ import scala.xml.Node
 
 class ScheduleFetcher() extends Actor with ActorLogging {
   private var ws: NingWSClient = null
+  import context.dispatcher
 
   override def receive: Receive = {
     case request@ScheduleRequest(serviceId, from, to, pageToFetch, 0) =>
@@ -63,10 +64,9 @@ class ScheduleFetcher() extends Actor with ActorLogging {
   }
 
   private def scheduleRetry(request: Retryable, retry: Int): Unit = {
-    val delay = Math.pow(3, retry).seconds
-    log.warning(s"Scheduling $retry retry in ${delay.toSeconds} seconds for request $request")
+    val delay = calculateDelay(retry)
 
-    import context.dispatcher
+    log.warning(s"Scheduling $retry retry in ${delay.toSeconds} seconds for request $request")
     context.system.scheduler.scheduleOnce(delay, self, Retry(request))
   }
 }
@@ -159,5 +159,7 @@ object ScheduleFetcher {
 
     if (totalProgrammes % pageSize == 0) totalProgrammes / pageSize else totalProgrammes / pageSize + 1
   }
+
+  def calculateDelay(retry: Int): FiniteDuration = Math.pow(3, retry).seconds
 }
 
