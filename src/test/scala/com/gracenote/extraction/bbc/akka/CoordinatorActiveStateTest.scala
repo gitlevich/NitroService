@@ -80,5 +80,6 @@ class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem"))
 
   override def afterAll {
     TestKit.shutdownActorSystem(system)
+    outputFile.deleteOnExit()
   }
 }
