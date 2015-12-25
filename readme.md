@@ -10,3 +10,8 @@ Before you can run the service, you need to add to the classpath a new file with
 
 Please replace "the-actual-api-key" with your API key. 
 
+If you care to see application logs, also add this fragment:
+
+`akka {
+   loglevel = "INFO"
+ }`
