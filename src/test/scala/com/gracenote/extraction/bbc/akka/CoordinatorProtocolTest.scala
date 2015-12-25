@@ -6,10 +6,9 @@ import org.joda.time.DateTime
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
 
-class ScheduleResponseTest extends WordSpecLike with Matchers with MockitoSugar {
+class CoordinatorProtocolTest extends WordSpecLike with Matchers with MockitoSugar {
 
-  "ProgramResponse" should {
-
+  "ScheduleResponse" should {
     "calculate just next page request" in {
       val request1 = ScheduleRequest("abc", DateTime.parse("2015-12-01"), DateTime.parse("2015-12-02"))
       val response = ScheduleResponse(Seq.empty[ScheduledProgram], totalPages = 4, request1)
@@ -25,7 +24,22 @@ class ScheduleResponseTest extends WordSpecLike with Matchers with MockitoSugar 
 
       val request5 = response.copy(request = request4.get).nextPageRequest
       assert(None === request5)
+    }
+  }
 
+  "ProgramAvailabilityRequest" should {
+    "create next try with incremented retry attempt" in {
+      val request = ProgramAvailabilityRequest(makeProgram("1"), retryAttempt = 0)
+
+      request.nextTry.retryAttempt shouldBe request.retryAttempt + 1
+    }
+  }
+
+  "ScheduleRequest" should {
+    "create next try with incremented retry attempt" in {
+      val request = ScheduleRequest("bbc_four", DateTime.parse("2015-12-16"), DateTime.parse("2015-12-17"), retryAttempt = 0)
+
+      request.nextTry.retryAttempt shouldBe request.retryAttempt + 1
     }
   }
 }

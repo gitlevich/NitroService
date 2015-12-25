@@ -69,7 +69,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
       stay() using stats
 
     case Event(StateTimeout, stats) =>
-      log.info(s"Import session timed out after $timeoutToEndSession of inactivity.")
+      log.info(s"The ingest session seems to have finished: no activity for $timeoutToEndSession.")
       stats.fileName.foreach(fileName => log.info(s"The result will be saved in '$fileName'"))
 
       writer ! PoisonPill

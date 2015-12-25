@@ -6,14 +6,12 @@ import akka.actor._
 import akka.contrib.throttle.Throttler.Rate
 import akka.testkit._
 import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
-import com.gracenote.extraction.bbc.akka.Coordinator._
-import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 
 import scala.concurrent.duration._
 
-class CoordinatorTest extends TestKit(ActorSystem("testSystem")) with WordSpecLike with MockitoSugar with ImplicitSender with Matchers with BeforeAndAfterAll {
+class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem")) with WordSpecLike with MockitoSugar with ImplicitSender with Matchers with BeforeAndAfterAll {
 
   val outputFile = new File("some_file.csv")
   val rate = Rate(100000, 1.second)
@@ -27,7 +25,6 @@ class CoordinatorTest extends TestKit(ActorSystem("testSystem")) with WordSpecLi
 
     val program1 = makeProgram("111")
     val program2 = makeProgram("222")
-    val scheduleRequest = ScheduleRequest("bbc_four", DateTime.parse("2015-12-16"), DateTime.parse("2015-12-17"))
 
     "forward ScheduleRequest to fetcher" in {
       coordinator ! scheduleRequest
@@ -61,8 +58,21 @@ class CoordinatorTest extends TestKit(ActorSystem("testSystem")) with WordSpecLi
       val received = fetcher.receiveN(1)
       assert(received.head.getClass != classOf[ScheduleRequest])
     }
-  }
 
-  def makeProgram(pid: String) =
-    ScheduledProgram("serviceId", pid, "2015-12-16T09:00:00", "2015-12-16T10:00:00", "The Devil Wears Prada")
+    "forward program to writer on ProgramAvailabilityResponse if program is available" in {
+      val availabilityResponse = ProgramAvailabilityResponse(makeProgram("1"), isAvailable = true)
+
+      coordinator ! availabilityResponse
+
+      writer.expectMsg(availabilityResponse.program)
+    }
+
+    "not forward program to writer on ProgramAvailabilityResponse if program is unavailable" in {
+      val availabilityResponse = ProgramAvailabilityResponse(makeProgram("1"), isAvailable = false)
+
+      coordinator ! availabilityResponse
+
+      writer.expectNoMsg
+    }
+  }
 }

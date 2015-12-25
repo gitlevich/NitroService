@@ -45,15 +45,18 @@ class CoordinatorStateTransitionTest extends TestKit(ActorSystem("testSystem")) 
     }
 
     "stay in Active state upon receiving ScheduleResponse" in {
-
+      coordinator ! ScheduleResponse(Seq(makeProgram("1")), 10, scheduleRequest)
+      assert(coordinator.stateName == Coordinator.Active)
     }
 
     "stay in Active state upon receiving ProgramAvailabilityResponse" in {
-
+      coordinator ! ProgramAvailabilityResponse(makeProgram("1"), isAvailable = true)
+      assert(coordinator.stateName == Coordinator.Active)
     }
 
     "stay in Active state upon receiving UnrecoverableError" in {
-
+      coordinator ! UnrecoverableError(scheduleRequest, "Trouble!")
+      assert(coordinator.stateName == Coordinator.Active)
     }
 
     "transition back to Idle on timeout" in {
