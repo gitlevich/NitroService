@@ -10,6 +10,7 @@ import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
 import com.gracenote.extraction.bbc.akka.FileWriter.OpenFile
 import com.gracenote.extraction.bbc.akka.ScheduleFetcher.Protocol.StartUp
+import com.typesafe.config.ConfigFactory
 import org.joda.time._
 
 import scala.concurrent.duration._
@@ -17,25 +18,27 @@ import scala.concurrent.duration._
 class Coordinator() extends Actor with FSM[State, Stats] {
   startWith(Idle, Stats(None))
 
+  log.info(s"Started with system timeout of $systemTimeout and session timeout of $sessionTimeout")
+
   private var fetcher: ActorRef = null
   private var throttler: ActorRef = null
   private var writer: ActorRef = null
 
-  when(Idle, stateTimeout = timeoutToTerminate) {
+  when(Idle, stateTimeout = systemTimeout) {
     case Event(StartExtraction(file, rate), stats) =>
-      writer = context.actorOf(Props(new FileWriter()), "writer")
+      writer = context.actorOf(Props(classOf[FileWriter]), "writer")
       writer ! OpenFile(file)
 
-      fetcher = context.actorOf(Props(new ScheduleFetcher()), "fetcher")
+      fetcher = context.actorOf(Props(classOf[ScheduleFetcher]), "fetcher")
       fetcher ! StartUp()
 
-      throttler = context.actorOf(Props(new TimerBasedThrottler(rate)), "throttler")
+      throttler = context.actorOf(Props(classOf[TimerBasedThrottler], rate), "throttler")
       throttler ! SetTarget(Some(fetcher))
 
       goto(Active) using stats.copy(fileName = Some(file.getAbsolutePath))
 
     case Event(StateTimeout, stats) =>
-      log.info(s"Shutting down the actor system after $timeoutToTerminate of inactivity.")
+      log.info(s"Shutting down the actor system after $systemTimeout of inactivity.")
       context.system.terminate()
       goto(Terminated) using stats
 
@@ -49,7 +52,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
       goto(state) using stats
   }
 
-  when(Active, stateTimeout = timeoutToEndSession) {
+  when(Active, stateTimeout = sessionTimeout) {
     case Event(request: ScheduleRequest, stats) =>
       throttler ! request
       stay() using stats
@@ -70,7 +73,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
       stay() using stats
 
     case Event(StateTimeout, stats) =>
-      log.info(s"The ingest session seems to have finished: no activity for $timeoutToEndSession.")
+      log.info(s"The ingest session seems to have finished: no activity for $sessionTimeout.")
       stats.fileName.foreach(fileName => log.info(s"The result will be saved in '$fileName'"))
       val sessionDuration =
         FiniteDuration(DateTime.now().getMillis - stats.startTime.getMillis, TimeUnit.MILLISECONDS).toCoarsest
@@ -96,8 +99,10 @@ class Coordinator() extends Actor with FSM[State, Stats] {
 
 
 private[bbc] object Coordinator {
-  val timeoutToTerminate = 1.minute
-  val timeoutToEndSession = 1.minute
+  val config = ConfigFactory.load()
+
+  val systemTimeout = config.getInt("nitro.coordinator.timeout.system").minutes
+  val sessionTimeout = config.getInt("nitro.coordinator.timeout.session").minutes
 
   sealed trait State
   case object Idle extends State

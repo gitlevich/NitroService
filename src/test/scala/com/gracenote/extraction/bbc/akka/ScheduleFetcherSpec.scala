@@ -144,6 +144,13 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
       ScheduleFetcher.calculateDelay(2) shouldBe 9.seconds
       ScheduleFetcher.calculateDelay(3) shouldBe 27.seconds
     }
+
+    "load expected configuration values" in {
+      ScheduleFetcher.maxRetries shouldBe 3
+      ScheduleFetcher.schedulesUrl shouldBe "http://programmes.api.bbc.com/nitro/api/schedules"
+      ScheduleFetcher.availabilityUrl shouldBe "http://programmes.api.bbc.com/nitro/api/programmes"
+      ScheduleFetcher.apiKey shouldNot be(null)
+    }
   }
 
 

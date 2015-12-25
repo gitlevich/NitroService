@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><nitro xsi:schemaLocation="http://www.bbc.co.uk/nitro/ https://nitro.api.bbci.co.uk/nitro/api/schema" xmlns="http://www.bbc.co.uk/nitro/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <results page="1" page_size="10" total="0" more_than="0"/>
+  <filters>
+    <filter name="audio_described" type="boolean" title="filter for subset of programmes that are audio-described" release_status="supported">
+      <option value="true" title="filter for programmes that are audio-described" href="/nitro/api/programmes?audio_described=true&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="false" title="filter for programmes that are not audio-described" href="/nitro/api/programmes?audio_described=false&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="availability" type="string" title="filter for subset of programmes that have availability" multiple_values="true" release_status="supported">
+      <option value="pending" title="filter for programmes that are expected to become available imminently" release_status="supported" href="/nitro/api/programmes?availability=pending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="availability" type="daytime_duration" title="filter for programmes that will become available within given duration" multiple_values="true" release_status="supported"/>
+    <filter name="availability_from" type="datetime" title="filter for subset of programmes that are available after or at the specified datetime" release_status="deprecated" deprecated="true" deprecated_since="2014-01-22"/>
+    <filter name="availability_to" type="datetime" title="filter for subset of programmes that are available before the specified datetime" release_status="deprecated" deprecated="true" deprecated_since="2014-01-22"/>
+    <filter name="availability_type" type="string" title="filter for a subset of programmes that are available for a given type" release_status="supported" default="ondemand" depends_on="availability">
+      <option value="ondemand" title="filters programmes based on availability type of ondemand" href="/nitro/api/programmes?availability_type=ondemand&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="children_of" type="PID" title="filter for subset of programmes that have PID as immediate parent" multiple_values="true" release_status="supported"/>
+    <filter name="descendants_of" type="PID" title="filter for subset of programmes that have PID as ancestor" multiple_values="true" release_status="supported"/>
+    <filter name="duration" type="string" title="filter for subset of programmes that have given duration" release_status="supported">
+      <option value="short" title="filter for programmes that have short duration (&lt; 5m)" href="/nitro/api/programmes?duration=short&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="medium" title="filter for programmes that have medium duration (5m - 30m)" href="/nitro/api/programmes?duration=medium&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="long" title="filter for programmes that have long duration (&gt; 30m)" href="/nitro/api/programmes?duration=long&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="entity_type" type="string" title="filter for subset of programmes that have given entity type" multiple_values="true" release_status="supported">
+      <option value="brand" title="filter for programmes that are brands" href="/nitro/api/programmes?entity_type=brand&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="series" title="filter for programmes that are series" href="/nitro/api/programmes?entity_type=series&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="clip" title="filter for programmes that are clips" href="/nitro/api/programmes?entity_type=clip&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="format" type="string" title="filter for subset of programmes with format" multiple_values="true" release_status="supported"/>
+    <filter name="genre" type="string" title="filter for subset of programmes with genre" multiple_values="true" release_status="supported"/>
+    <filter name="group" type="PID" title="filter for subset of programmes which belong to the given group pid" release_status="supported"/>
+    <filter name="initial_letter" type="character" title="filter for subset of programmes with title beginning with initial letter librarian style (ignoring leading 'The', 'An' (Welsh), etc) 0-9 a-z" release_status="supported"/>
+    <filter name="initial_letter_end" type="character" title="Programmes with (librarian) titles whose initial letter is equal/before given letter. Use with initial_letter_start for a range" release_status="supported"/>
+    <filter name="initial_letter_start" type="character" title="Programmes with (librarian) titles whose initial letter is equal/after given letter. Use with initial_letter_end for range." release_status="supported"/>
+    <filter name="initial_letter_stop" type="character" title="Programmes with (librarian) titles whose initial letter is equal/before given letter. Use with initial_letter_start for a range" release_status="deprecated" deprecated="true" deprecated_since="2014-01-22" replaced_by="initial_letter_end"/>
+    <filter name="initial_letter_strict" type="character" title="filter for subset of programmes with title beginning with initial letter" multiple_values="true" release_status="supported"/>
+    <filter name="item" type="PID" title="filter for subset of programmes with linked to versions which have the given item pids" multiple_values="true" release_status="supported"/>
+    <filter name="master_brand" type="string" title="filter for subset of programmes with master_brand" multiple_values="true" release_status="supported"/>
+    <filter name="media_type" type="string" title="filter for subset of programmes with media type" release_status="supported">
+      <option value="audio" title="filter for programmes that are audio only" href="/nitro/api/programmes?media_type=audio&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="audio_video" title="filter for programmes that are video only" href="/nitro/api/programmes?media_type=audio_video&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="page" type="integer" title="which page of results to return" min_value="1" default="1" release_status="supported"/>
+    <filter name="page_size" type="integer" title="number of results in each page" min_value="0" max_value="300" default="10" release_status="supported"/>
+    <filter name="partner_id" type="PID" title="filter for programmes by partner ID" release_status="supported" multiple_values="true" prefer="partner_pid"/>
+    <filter name="partner_pid" type="PID" title="filter for programmes by partner PID" release_status="supported" multiple_values="true" default="s0000001"/>
+    <filter name="people" type="PID" title="filter for subset of programmes with contributions by given people PID" release_status="supported"/>
+    <filter name="pid" type="PID" title="filter for subset of programmes having given PID" multiple_values="true" release_status="supported"/>
+    <filter name="promoted_for" type="string" title="filter for subset of programmes which are promoted for given service" release_status="supported"/>
+    <filter name="q" type="string" title="filter for subset of programmes matching supplied keyword/phrase (boolean operators permitted)" release_status="supported"/>
+    <filter name="signed" type="string" title="filter for subset of programmes that are signed" release_status="supported">
+      <option value="exclusive" title="filter for programmes that are signed" href="/nitro/api/programmes?signed=exclusive&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="inclusive" title="filter for programmes regardless of signedness" href="/nitro/api/programmes?signed=inclusive&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="exclude" title="filter for programmes that are not signed" href="/nitro/api/programmes?signed=exclude&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="tag_name" type="string" title="filter for subset of programmes with tag" release_status="supported"/>
+    <filter name="tag_scheme" type="string" title="filter for subset of programmes with a tag" release_status="supported"/>
+    <filter name="tleo" type="boolean" title="filter for subset of programmes that are TLEOs" release_status="supported">
+      <option value="true" title="filter for programmes that are TLEOs" href="/nitro/api/programmes?tleo=true&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <option value="false" title="filter for programmes that are not TLEOs" href="/nitro/api/programmes?tleo=false&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </filter>
+    <filter name="version" type="PID" title="filter for subset of programmes with given PID as one of their versions" multiple_values="true" release_status="supported"/>
+  </filters>
+  <sorts>
+    <sort name="group_position" is_default="false" title="sort numerically by position in group, ascending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="true" href="/nitro/api/programmes?sort=group_position&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="most_popular" is_default="false" title="sort numerically by popularity (most popular first)" release_status="deprecated" deprecated="true" deprecated_since="2013-11-11" replaced_by="views">
+      <sort_direction name="sort_direction" value="ascending" is_default="false" href="/nitro/api/programmes?sort=most_popular&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="true" href="/nitro/api/programmes?sort=most_popular&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="pid" is_default="true" title="sort alphabetically by PID, descending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="false" href="/nitro/api/programmes?sort=pid&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="true" href="/nitro/api/programmes?sort=pid&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="position" is_default="false" title="sort numerically by position, ascending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="true" href="/nitro/api/programmes?sort=position&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="false" href="/nitro/api/programmes?sort=position&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="release_date" is_default="false" title="sort chronologically by release date, descending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="false" href="/nitro/api/programmes?sort=release_date&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="true" href="/nitro/api/programmes?sort=release_date&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="relevance" is_default="false" title="sort by weighting of search term (use with q parameter)" release_status="supported"/>
+    <sort name="scheduled_start" is_default="false" title="sort chronologically by scheduled start time/date, ascending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="true" href="/nitro/api/programmes?sort=scheduled_start&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="false" href="/nitro/api/programmes?sort=scheduled_start&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="strict_title" is_default="false" title="sort alphabetically by title, ascending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="true" href="/nitro/api/programmes?sort=strict_title&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="false" href="/nitro/api/programmes?sort=strict_title&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="title" is_default="false" title="sort by title librarian style (ignoring leading 'The', 'A', etc), ascending" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="true" href="/nitro/api/programmes?sort=title&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="false" href="/nitro/api/programmes?sort=title&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="tree" is_default="false" title="sort by root pid and then preorder tree sort. Requires entities to have release date." release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="false" href="/nitro/api/programmes?sort=tree&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="true" href="/nitro/api/programmes?sort=tree&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+    <sort name="views" is_default="false" title="sort numerically by number of views (most popular first - faster most_popular)" release_status="supported">
+      <sort_direction name="sort_direction" value="ascending" is_default="false" href="/nitro/api/programmes?sort=views&amp;sort_direction=ascending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+      <sort_direction name="sort_direction" value="descending" is_default="true" href="/nitro/api/programmes?sort=views&amp;sort_direction=descending&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    </sort>
+  </sorts>
+  <mixins>
+    <mixin name="ancestor_titles" title="mixin to return ancestor programme titles" release_status="supported" href="/nitro/api/programmes?mixin=ancestor_titles&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="availability" title="mixin to return programme availability information" depends_on="availability" release_status="supported" href="/nitro/api/programmes?mixin=availability&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="available_versions" title="mixin to return information about programmes that are currently available" release_status="supported" href="/nitro/api/programmes?mixin=available_versions&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="contributions" title="mixin to return information about contributors to a programme" release_status="supported" href="/nitro/api/programmes?mixin=contributions&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="duration" title="mixin to return original version duration in programme concept entities" release_status="supported" href="/nitro/api/programmes?mixin=duration&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="genre_groupings" title="mixin to return list of genre groupings" release_status="supported" href="/nitro/api/programmes?mixin=genre_groupings&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x">
+      <prohibits>
+	<mixin name="genre_groups"/>
+      </prohibits>
+    </mixin>
+    <mixin name="genre_groups" title="mixin to return list of genre groups" release_status="deprecated" deprecated="true" deprecated_since="2015-03-19" replaced_by="genre_groupings" href="/nitro/api/programmes?mixin=genre_groups&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x">
+      <prohibits>
+	<mixin name="genre_groupings"/>
+      </prohibits>
+    </mixin>
+    <mixin name="images" title="mixin to add image information for a programme" release_status="supported" href="/nitro/api/programmes?mixin=images&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="is_embeddable" title="mixin to add embeddable information for a programme" release_status="supported" href="/nitro/api/programmes?mixin=is_embeddable&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="people" title="mixin to return information about contributors to a programme" release_status="deprecated" deprecated="true" deprecated_since="2014-05-02" replaced_by="contributions" href="/nitro/api/programmes?mixin=people&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="related_links" title="mixin to return information about related links to a programme" release_status="supported" href="/nitro/api/programmes?mixin=related_links&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="titles" title="mixin to return ancestor programme titles" release_status="deprecated" deprecated="true" deprecated_since="2013-11-14" replaced_by="ancestor_titles" href="/nitro/api/programmes?mixin=titles&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+    <mixin name="versions_availability" title="mixin to return information about programmes that are currently available" release_status="supported" href="/nitro/api/programmes?mixin=versions_availability&amp;availability=available&amp;availability=P5D&amp;availability_entity_type=episode&amp;entity_type=episode&amp;media_set=stb-all-h264&amp;pid=b01ppl1x"/>
+  </mixins>
+  <deprecations>
+    <deprecated name="availability_from" type="filter" deprecated_since="2014-01-22"/>
+    <deprecated name="availability_to" type="filter" deprecated_since="2014-01-22"/>
+    <deprecated name="initial_letter_stop" type="filter" deprecated_since="2014-01-22" replaced_by="initial_letter_end" replacement_type="filter"/>
+    <deprecated name="most_popular" type="sort" deprecated_since="2013-11-11" replaced_by="views" replacement_type="sort"/>
+    <deprecated name="versions_availability" type="mixin" deprecated_since="2015-11-10" replaced_by="available_versions" replacement_type="mixin"/>
+    <deprecated name="people" type="mixin" deprecated_since="2014-05-02" replaced_by="contributions" replacement_type="mixin"/>
+    <deprecated name="titles" type="mixin" deprecated_since="2013-11-14" replaced_by="ancestor_titles" replacement_type="mixin"/>
+    <deprecated name="genre_groups" type="mixin" deprecated_since="2015-03-19" replaced_by="genre_groupings" replacement_type="mixin"/>
+    <deprecated name="n:formats" type="element" deprecated_since="2015-03-23" replaced_by="n:programme_formats" replacement_type="element"/>
+    <deprecated name="n:genre_groups" type="element" deprecated_since="2015-03-23" replaced_by="n:genre_groupings" replacement_type="element"/>
+    <deprecated name="n:image" type="element" deprecated_since="2014-07-09" replaced_by="images" replacement_type="mixin"/>
+  </deprecations>
+</nitro>

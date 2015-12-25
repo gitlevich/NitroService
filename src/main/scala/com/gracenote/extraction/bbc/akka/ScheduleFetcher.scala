@@ -6,6 +6,7 @@ import com.gracenote.extraction.bbc.akka.Coordinator._
 import com.gracenote.extraction.bbc.akka.ScheduleFetcher.Protocol._
 import com.gracenote.extraction.bbc.akka.ScheduleFetcher._
 import com.ning.http.client.AsyncHttpClientConfig.Builder
+import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import play.api.libs.ws._
 import play.api.libs.ws.ning.NingWSClient
@@ -18,6 +19,12 @@ import scala.xml.Node
 class ScheduleFetcher() extends Actor with ActorLogging {
   private var ws: NingWSClient = null
   import context.dispatcher
+
+  log.info("Started with parameters:\n" +
+    s"\t\tmaxRetries = $maxRetries\n" +
+    s"\t\tschedulesUrl = $schedulesUrl\n" +
+    s"\t\tavailabilityUrl = $availabilityUrl\n" +
+    "\t\tapiKey = ******")
 
   override def receive: Receive = {
     case request@ScheduleRequest(serviceId, from, to, pageToFetch, 0) =>
@@ -73,9 +80,12 @@ class ScheduleFetcher() extends Actor with ActorLogging {
 
 
 object ScheduleFetcher {
-  val maxRetries = 3
-  val availabilityUrl = "http://programmes.api.bbc.com/nitro/api/programmes"
-  val schedulesUrl = "http://programmes.api.bbc.com/nitro/api/schedules"
+  val config = ConfigFactory.load()
+
+  val maxRetries = config.getInt("nitro.fetcher.max_retry_count")
+  val apiKey = config.getString("nitro.fetcher.ws.api_key")
+  val schedulesUrl = config.getString("nitro.fetcher.ws.url.schedule")
+  val availabilityUrl = config.getString("nitro.fetcher.ws.url.availability")
 
   object Protocol {
     case class Retry(request: Retryable)
@@ -107,7 +117,7 @@ object ScheduleFetcher {
       .withQueryString("entity_type" -> "episode")
       .withQueryString("availability" -> "P5D")
       .withQueryString("media_set" -> "stb-all-h264")
-      .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
+      .withQueryString("api_key" -> apiKey)
   }
 
   def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int, ws: NingWSClient): WSRequest = {
@@ -118,7 +128,7 @@ object ScheduleFetcher {
       .withQueryString("schedule_day_to" -> to.toString("YYYY-MM-dd"))
       .withQueryString("sid" -> serviceId)
       .withQueryString("mixin" -> "ancestor_titles")
-      .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
+      .withQueryString("api_key" -> apiKey)
   }
 
   def recoverableError(wsResponse: WSResponse): Boolean =
