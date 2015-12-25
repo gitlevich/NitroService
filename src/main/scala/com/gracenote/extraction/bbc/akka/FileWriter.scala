@@ -25,8 +25,8 @@ class FileWriter() extends Actor with ActorLogging {
   }
 
   override def postStop() {
-    log.info("Closing output file")
     csvWriter.close()
+    log.info("Output file closed.")
     super.postStop()
   }
 }

@@ -14,56 +14,66 @@ import org.joda.time.DateTime
 import scala.concurrent.duration._
 
 class Coordinator() extends Actor with FSM[State, Stats] {
-  startWith(Idle, Stats())
+  startWith(Idle, Stats(None))
 
   private var fetcher: ActorRef = null
   private var throttler: ActorRef = null
   private var writer: ActorRef = null
 
-  when(Idle) {
-    case Event(StartExtraction(file, rate), Stats()) =>
-      writer = context.actorOf(Props(new FileWriter()))
+  when(Idle, stateTimeout = timeoutToTerminate) {
+    case Event(StartExtraction(file, rate), stats) =>
+      writer = context.actorOf(Props(new FileWriter()), "writer")
       writer ! OpenFile(file)
 
-      fetcher = context.actorOf(Props(new ScheduleFetcher()))
+      fetcher = context.actorOf(Props(new ScheduleFetcher()), "fetcher")
       fetcher ! StartUp()
 
-      throttler = context.actorOf(Props(new TimerBasedThrottler(rate)))
+      throttler = context.actorOf(Props(new TimerBasedThrottler(rate)), "throttler")
       throttler ! SetTarget(Some(fetcher))
 
-      goto(Active)
+      goto(Active) using stats.copy(fileName = Some(file.getAbsolutePath))
+
+    case Event(StateTimeout, stats) =>
+      log.info(s"Shutting down the actor system after $timeoutToTerminate of inactivity.")
+      context.system.terminate()
+      goto(Terminated) using stats
   }
 
-  when(Active, stateTimeout = 1.minute) {
-    case Event(request: ScheduleRequest, Stats()) =>
+  when(Active, stateTimeout = timeoutToEndSession) {
+    case Event(request: ScheduleRequest, stats) =>
       throttler ! request
-      stay()
+      stay() using stats
 
-    case Event(response@ScheduleResponse(programs, totalPages, _), Stats()) =>
+    case Event(response@ScheduleResponse(programs, totalPages, _), stats) =>
       programs.foreach { p => throttler ! ProgramAvailabilityRequest(p) }
       response.nextPageRequest.foreach { nextPageRequest =>
         throttler ! nextPageRequest
       }
-      stay()
+      stay() using stats
 
-    case Event(ProgramAvailabilityResponse(program, isAvailable), Stats()) =>
+    case Event(ProgramAvailabilityResponse(program, isAvailable), stats) =>
       if (isAvailable) writer ! program else log.info(s"$program is not available")
-      stay()
+      stay() using stats
 
-    case Event(UnrecoverableError(request, message), Stats()) =>
+    case Event(UnrecoverableError(request, message), stats) =>
       log.warning(s"Error: '$message' while processing $request")
-      stay()
+      stay() using stats
 
-    case Event(StateTimeout, Stats()) =>
-      log.info(s"Looks like we are done. Timing out...")
+    case Event(StateTimeout, stats) =>
+      log.info(s"Import session timed out after $timeoutToEndSession of inactivity.")
+      stats.fileName.foreach(fileName => log.info(s"The result will be saved in '$fileName'"))
+
       writer ! PoisonPill
       throttler ! PoisonPill
       fetcher ! PoisonPill
 
-      goto(Idle)
+      goto(Idle) using stats
   }
 
+  when(Terminated)(FSM.NullFunction)
+
   onTransition {
+    case Idle -> Terminated ⇒ log.info("Transitioning Idle -> Terminated")
     case Idle -> Active ⇒ log.info("Transitioning Idle -> Active")
     case Active -> Idle ⇒ log.info("Transitioning Active -> Idle")
   }
@@ -73,12 +83,15 @@ class Coordinator() extends Actor with FSM[State, Stats] {
 
 
 private[bbc] object Coordinator {
+  val timeoutToTerminate = 1.minute
+  val timeoutToEndSession = 1.minute
 
   sealed trait State
   case object Idle extends State
   case object Active extends State
+  case object Terminated extends State
 
-  case class Stats()
+  case class Stats(fileName: Option[String])
 
   case class ScheduledProgram(sid: String, pid: String, startTime: String, endTime: String, title: String)
 

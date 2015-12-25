@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" % "akka-contrib_2.11" % "2.4.1",
   "com.github.nscala-time" %% "nscala-time" % "2.6.0",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.4.1" % "test",
   "org.scalamock" %% "scalamock-scalatest-support" % "3.2" % "test",
   "org.mockito" % "mockito-all" % "1.9.5" % "test"
 )

@@ -1,3 +1,2 @@
-bbc_alba
 bbc_four
 bbc_four_hd
