@@ -13,7 +13,7 @@ import org.scalatest._
 
 import scala.concurrent.duration._
 
-class CoordinatorStateTransitionTest extends TestKit(ActorSystem("testSystem"))
+class CoordinatorStateTransitionSpec extends TestKit(ActorSystem("testSystem"))
                                              with WordSpecLike
                                              with CoordinatorFixtures
                                              with Matchers with BeforeAndAfterAll {

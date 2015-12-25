@@ -10,7 +10,7 @@ import org.scalatest._
 
 import scala.concurrent.duration._
 
-class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem"))
+class CoordinatorActiveStateSpec extends TestKit(ActorSystem("testSystem"))
                                          with WordSpecLike
                                          with CoordinatorFixtures
                                          with Matchers with BeforeAndAfterAll {
@@ -19,9 +19,9 @@ class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem"))
   val rate = Rate(100000, 1.second)
 
   "Coordinator in Active state" should {
-    val writer = TestProbe()
-    val fetcher = TestProbe()
-    val coordinator = TestFSMRef(new Coordinator())
+    val writer = TestProbe("testWriter")
+    val fetcher = TestProbe("testFetcher")
+    val coordinator = TestFSMRef(new Coordinator(), "testCoordinator")
     coordinator ! ConfigureForTest(writer.testActor, fetcher.testActor, rate, Coordinator.Active)
     assert(coordinator.stateName == Coordinator.Active)
 

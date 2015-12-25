@@ -5,7 +5,7 @@ import com.gracenote.extraction.bbc.akka.Coordinator._
 import org.joda.time.DateTime
 import org.scalatest.{Matchers, WordSpecLike}
 
-class CoordinatorProtocolTest extends WordSpecLike with Matchers with CoordinatorFixtures {
+class CoordinatorProtocolSpec extends WordSpecLike with Matchers with CoordinatorFixtures {
 
   "ScheduleResponse" should {
     "calculate just next page request" in {
