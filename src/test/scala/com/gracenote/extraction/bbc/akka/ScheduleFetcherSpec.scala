@@ -32,7 +32,7 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
       expectMsg(cannedScheduleResponse)
     }
 
-    "response should have expected page count" in {
+    "respond with expected page count" in {
       when(scheduleResponse.status).thenReturn(Status.OK)
       fetcher ! cannedScheduleRequest
 
@@ -77,6 +77,7 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
   }
 
   "When received ProgramAvailabilityRequest fetcher" should {
+
     "respond with ProgramAvailabilityResponse on HTTP status OK" in {
       when(scheduleResponse.status).thenReturn(Status.OK)
       fetcher ! cannedAvailabilityRequest
@@ -84,43 +85,51 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
       expectMsg(cannedAvailabilityResponse)
     }
 
-    "response should have expected page count" in {
-      when(scheduleResponse.status).thenReturn(Status.OK)
+    "respond that the program is available if the server finds it" in {
+      when(availabilityResponse.status).thenReturn(Status.OK)
       fetcher ! cannedAvailabilityRequest
 
       receiveN(1).head.asInstanceOf[ProgramAvailabilityResponse].isAvailable shouldBe true
     }
 
+    "respond that the program is not available if the server doesn't find it" in {
+      when(availabilityResponse.status).thenReturn(Status.OK)
+      when(availabilityResponse.xml).thenReturn(XML.load(getClass.getClassLoader.getResourceAsStream("availability_none.xml")))
+      fetcher ! cannedAvailabilityRequest
+
+      receiveN(1).head.asInstanceOf[ProgramAvailabilityResponse].isAvailable shouldBe false
+    }
+
     "respond with retry request on HTTP status INTERNAL_SERVER_ERROR" in {
-      when(scheduleResponse.status).thenReturn(Status.INTERNAL_SERVER_ERROR)
+      when(availabilityResponse.status).thenReturn(Status.INTERNAL_SERVER_ERROR)
       fetcher ! cannedAvailabilityRequest
 
       expectMsg(cannedAvailabilityRequest.nextTry)
     }
 
     "respond with retry request on HTTP status REQUEST_TIMEOUT" in {
-      when(scheduleResponse.status).thenReturn(Status.REQUEST_TIMEOUT)
+      when(availabilityResponse.status).thenReturn(Status.REQUEST_TIMEOUT)
       fetcher ! cannedAvailabilityRequest
 
       expectMsg(cannedAvailabilityRequest.nextTry)
     }
 
     "respond with retry request on HTTP status GATEWAY_TIMEOUT" in {
-      when(scheduleResponse.status).thenReturn(Status.GATEWAY_TIMEOUT)
+      when(availabilityResponse.status).thenReturn(Status.GATEWAY_TIMEOUT)
       fetcher ! cannedAvailabilityRequest
 
       expectMsg(cannedAvailabilityRequest.nextTry)
     }
 
     "respond that program is unavailable on any other HTTP status" in {
-      when(scheduleResponse.status).thenReturn(Status.BAD_REQUEST)
+      when(availabilityResponse.status).thenReturn(Status.BAD_REQUEST)
       fetcher ! cannedAvailabilityRequest
 
       receiveN(1).head.asInstanceOf[ProgramAvailabilityResponse].isAvailable shouldBe false
     }
 
     "schedule no more than three retries after a recoverable server error response" in {
-      when(scheduleResponse.status).thenReturn(Status.REQUEST_TIMEOUT)
+      when(availabilityResponse.status).thenReturn(Status.REQUEST_TIMEOUT)
       fetcher ! cannedAvailabilityRequest.copy(retryAttempt = ScheduleFetcher.maxRetries)
 
       expectNoMsg
@@ -131,6 +140,7 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
 
   var fetcher: TestActorRef[ScheduleFetcher] = _
   var scheduleResponse: WSResponse = _
+  var availabilityResponse: WSResponse = _
 
   override def beforeEach() = {
     scheduleResponse = mock[WSResponse]
@@ -141,13 +151,13 @@ class ScheduleFetcherSpec extends TestKit(ActorSystem("testSystem")) with WordSp
     when(scheduleRequest.get()).thenReturn(Future(scheduleResponse))
     when(scheduleRequest.withQueryString(any[(String, String)])).thenReturn(scheduleRequest)
 
-    val availabilityResponse = mock[WSResponse]
+    availabilityResponse = mock[WSResponse]
     when(availabilityResponse.xml).thenReturn(XML.load(getClass.getClassLoader.getResourceAsStream("availability.xml")))
     when(availabilityResponse.status).thenReturn(Status.OK)
     when(availabilityResponse.body).thenReturn("")
     val availabilityRequest = mock[WSRequest]
     when(availabilityRequest.get()).thenReturn(Future(availabilityResponse))
-    when(availabilityRequest.withQueryString(any[(String, String)])).thenReturn(scheduleRequest)
+    when(availabilityRequest.withQueryString(any[(String, String)])).thenReturn(availabilityRequest)
 
     val ws = mock[NingWSClient]
     when(ws.url(ScheduleFetcher.schedulesUrl)).thenReturn(scheduleRequest)
