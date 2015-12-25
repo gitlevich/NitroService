@@ -3,10 +3,9 @@ package com.gracenote.extraction.bbc.akka
 import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
 import org.joda.time.DateTime
-import org.scalatest.mock.MockitoSugar
 import org.scalatest.{Matchers, WordSpecLike}
 
-class CoordinatorProtocolTest extends WordSpecLike with Matchers with MockitoSugar {
+class CoordinatorProtocolTest extends WordSpecLike with Matchers with CoordinatorFixtures {
 
   "ScheduleResponse" should {
     "calculate just next page request" in {

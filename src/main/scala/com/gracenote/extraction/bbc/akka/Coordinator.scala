@@ -1,6 +1,7 @@
 package com.gracenote.extraction.bbc.akka
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, FSM, PoisonPill, Props}
 import akka.contrib.throttle.Throttler.{Rate, SetTarget}
@@ -9,7 +10,7 @@ import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
 import com.gracenote.extraction.bbc.akka.FileWriter.OpenFile
 import com.gracenote.extraction.bbc.akka.ScheduleFetcher.Protocol.StartUp
-import org.joda.time.DateTime
+import org.joda.time._
 
 import scala.concurrent.duration._
 
@@ -71,6 +72,9 @@ class Coordinator() extends Actor with FSM[State, Stats] {
     case Event(StateTimeout, stats) =>
       log.info(s"The ingest session seems to have finished: no activity for $timeoutToEndSession.")
       stats.fileName.foreach(fileName => log.info(s"The result will be saved in '$fileName'"))
+      val sessionDuration =
+        FiniteDuration(DateTime.now().getMillis - stats.startTime.getMillis, TimeUnit.MILLISECONDS).toCoarsest
+      log.info(s"The session took $sessionDuration.")
 
       writer ! PoisonPill
       throttler ! PoisonPill
@@ -100,7 +104,7 @@ private[bbc] object Coordinator {
   case object Active extends State
   case object Terminated extends State
 
-  case class Stats(fileName: Option[String])
+  case class Stats(fileName: Option[String], startTime: DateTime = DateTime.now())
 
   case class ScheduledProgram(sid: String, pid: String, startTime: String, endTime: String, title: String)
 

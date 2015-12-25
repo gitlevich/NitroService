@@ -10,11 +10,13 @@ import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import com.gracenote.extraction.bbc.akka.Coordinator._
 import org.joda.time.DateTime
 import org.scalatest._
-import org.scalatest.mock.MockitoSugar
 
 import scala.concurrent.duration._
 
-class CoordinatorStateTransitionTest extends TestKit(ActorSystem("testSystem")) with WordSpecLike with MockitoSugar with ImplicitSender with Matchers with BeforeAndAfterAll {
+class CoordinatorStateTransitionTest extends TestKit(ActorSystem("testSystem"))
+                                             with WordSpecLike
+                                             with CoordinatorFixtures
+                                             with Matchers with BeforeAndAfterAll {
 
   val outputFile = new File("some_file.csv")
   val rate = Rate(100000, 1.second)
@@ -36,7 +38,7 @@ class CoordinatorStateTransitionTest extends TestKit(ActorSystem("testSystem")) 
     }
 
     "remember its output file name" in {
-      assert(coordinator.stateData == Stats(Some(outputFile.getAbsolutePath)))
+      assert(coordinator.stateData.fileName == Stats(Some(outputFile.getAbsolutePath)).fileName)
     }
 
     "stay in Active state upon receiving ScheduleRequest" in {
@@ -68,5 +70,9 @@ class CoordinatorStateTransitionTest extends TestKit(ActorSystem("testSystem")) 
       coordinator ! StateTimeout
       assert(coordinator.stateName == Coordinator.Terminated)
     }
+  }
+
+  override def afterAll {
+    TestKit.shutdownActorSystem(system)
   }
 }

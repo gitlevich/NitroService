@@ -7,11 +7,13 @@ import akka.contrib.throttle.Throttler.Rate
 import akka.testkit._
 import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
 import org.scalatest._
-import org.scalatest.mock.MockitoSugar
 
 import scala.concurrent.duration._
 
-class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem")) with WordSpecLike with MockitoSugar with ImplicitSender with Matchers with BeforeAndAfterAll {
+class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem"))
+                                         with WordSpecLike
+                                         with CoordinatorFixtures
+                                         with Matchers with BeforeAndAfterAll {
 
   val outputFile = new File("some_file.csv")
   val rate = Rate(100000, 1.second)
@@ -74,5 +76,9 @@ class CoordinatorActiveStateTest extends TestKit(ActorSystem("testSystem")) with
 
       writer.expectNoMsg
     }
+  }
+
+  override def afterAll {
+    TestKit.shutdownActorSystem(system)
   }
 }

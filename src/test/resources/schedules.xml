@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nitro xsi:schemaLocation="http://www.bbc.co.uk/nitro/ https://nitro.api.bbci.co.uk/nitro/api/schema" xmlns="http://www.bbc.co.uk/nitro/"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <results page="1" page_size="10" total="10" more_than="9">
+        <broadcast>
+            <pid>p03bg3k1</pid>
+            <partner>s0000001</partner>
+            <service sid="bbc_four_hd" result_type="service" href="/nitro/api/services?sid=bbc_four_hd"/>
+            <updated_time>2015-12-24T18:03:34Z</updated_time>
+            <published_time start="2015-12-25T19:00:00Z" end="2015-12-25T19:30:00Z" duration="PT30M"/>
+            <ids>
+                <id type="bid" authority="pips">b06sshn2.imi:bds.tv/537317888</id>
+                <id type="event_id" authority="onair">97713820</id>
+                <id type="pid" authority="pips">p03bg3k1</id>
+                <id type="satellite_event_locator" authority="teleview">dvb://2..22E3;B59A</id>
+                <id type="satellite_programme_crid" authority="teleview">crid://fp.bbc.co.uk/241A6U</id>
+                <id type="satellite_series_crid" authority="teleview">crid://fp.bbc.co.uk/V3Y7TC</id>
+                <id type="terrestrial_event_locator" authority="teleview">dvb://233A..A010;B59A</id>
+                <id type="terrestrial_programme_crid" authority="teleview">crid://fp.bbc.co.uk/241A6U</id>
+                <id type="terrestrial_series_crid" authority="teleview">crid://fp.bbc.co.uk/V3Y7TC</id>
+            </ids>
+            <is_blanked>false</is_blanked>
+            <is_repeat>false</is_repeat>
+            <is_audio_described>false</is_audio_described>
+            <is_critical>false</is_critical>
+            <is_simulcast>true</is_simulcast>
+            <broadcast_of result_type="version" pid="b06sshn2" href="/nitro/api/versions?pid=b06sshn2"/>
+            <broadcast_of result_type="episode" pid="b06ssj6l" href="/nitro/api/programmes?pid=b06ssj6l"/>
+            <image deprecated="true" deprecated_since="2014-07-09" replaced_by="mixin=images" pid="p03btrb9" template_url="http://ichef.bbci.co.uk/images/ic/$recipe/p03btrb9.jpg"/>
+            <ancestor_titles>
+                <brand>
+                    <pid>b06nrsl0</pid>
+                    <title>The Quizeum</title>
+                </brand>
+                <series>
+                    <pid>b06nrsqq</pid>
+                    <title>Series 2</title>
+                </series>
+                <episode>
+                    <pid>b06ssj6l</pid>
+                    <title>Christmas Special</title>
+                    <presentation_title>Episode 8</presentation_title>
+                    <containers_title>The Quizeum: Series 2</containers_title>
+                </episode>
+            </ancestor_titles>
+        </broadcast>
+        <broadcast>
+            <pid>p03bg3k2</pid>
+            <partner>s0000001</partner>
+            <service sid="bbc_four_hd" result_type="service" href="/nitro/api/services?sid=bbc_four_hd"/>
+            <updated_time>2015-12-14T06:50:44Z</updated_time>
+            <published_time start="2015-12-25T19:30:00Z" end="2015-12-25T20:45:00Z" duration="PT1H15M"/>
+            <ids>
+                <id type="bid" authority="pips">b06t3pvx.imi:bds.tv/536323677</id>
+                <id type="event_id" authority="onair">97713815</id>
+                <id type="pid" authority="pips">p03bg3k2</id>
+                <id type="satellite_event_locator" authority="teleview">dvb://2..22E3;B4DF</id>
+                <id type="satellite_programme_crid" authority="teleview">crid://fp.bbc.co.uk/2419PZ</id>
+                <id type="terrestrial_event_locator" authority="teleview">dvb://233A..A010;B4DF</id>
+                <id type="terrestrial_programme_crid" authority="teleview">crid://fp.bbc.co.uk/2419PZ</id>
+            </ids>
+            <is_blanked>false</is_blanked>
+            <is_repeat>false</is_repeat>
+            <is_audio_described>false</is_audio_described>
+            <is_critical>false</is_critical>
+            <is_simulcast>true</is_simulcast>
+            <broadcast_of result_type="version" pid="b06t3pvx" href="/nitro/api/versions?pid=b06t3pvx"/>
+            <broadcast_of result_type="episode" pid="b06t3qkz" href="/nitro/api/programmes?pid=b06t3qkz"/>
+            <image deprecated="true" deprecated_since="2014-07-09" replaced_by="mixin=images" pid="p03bv9bn" template_url="http://ichef.bbci.co.uk/images/ic/$recipe/p03bv9bn.jpg"/>
+            <ancestor_titles>
+                <episode>
+                    <pid>b06t3qkz</pid>
+                    <title>Carlos Acosta's Carmen: The Farewell Performance</title>
+                    <presentation_title>25/12/2015</presentation_title>
+                </episode>
+            </ancestor_titles>
+        </broadcast>
+    </results>
+    <filters>
+        <filter name="authority" type="string" title="filter for subset of broadcasts and webcasts that have given authority" multiple_values="true" release_status="supported"/>
+        <filter name="descendants_of" type="PID" title="filter for subset of broadcasts and webcasts that are descendants of the given programme PID" multiple_values="true"
+                release_status="supported"/>
+        <filter name="end_from" type="datetime" title="filter for subset of broadcasts and webcasts that end on or later than the specified datetime" release_status="supported"/>
+        <filter name="end_to" type="datetime" title="filter for subset of broadcasts and webcasts that end on or earlier than the specified datetime" release_status="supported"/>
+        <filter name="format" type="string" title="filter for subset of broadcasts and webcasts that are classified in the given format ID" multiple_values="true"
+                release_status="supported"/>
+        <filter name="genre" type="string" title="filter for subset of broadcasts and webcasts that are classified in the given genre ID" multiple_values="true"
+                release_status="supported"/>
+        <filter name="group" type="PID" title="filter for subset of broadcasts and webcasts that have programmes in the given group" release_status="supported"/>
+        <filter name="id" type="string" title="filter for subset of broadcasts and webcasts that have given identifier" multiple_values="true" release_status="supported"/>
+        <filter name="id_type" type="string" title="filter for subset of broadcasts and webcasts that have given id type" multiple_values="true" release_status="supported"/>
+        <filter name="item" type="PID" title="filter for subset of broadcasts and webcasts with the given item performed on it" multiple_values="true" release_status="supported"/>
+        <filter name="page_size" type="integer" title="number of results in each page" min_value="0" max_value="300" default="10" release_status="supported"/>
+        <filter name="partner_id" type="PID" title="filter for broadcasts and webcasts by partner ID" release_status="supported" multiple_values="true" prefer="partner_pid"/>
+        <filter name="partner_pid" type="PID" title="filter for broadcasts and webcasts by partner PID" release_status="supported" multiple_values="true" default="s0000001"/>
+        <filter name="people" type="string" title="filter for subset of broadcasts and webcasts that have given contributor" release_status="supported"/>
+        <filter name="pid" type="PID" title="filter for subset of broadcasts and webcasts having given PID" multiple_values="true" release_status="supported"/>
+        <filter name="q" type="string" title="filter for subset of broadcasts and webcasts matching supplied keyword/phrase (boolean operators permitted)"
+                release_status="supported"/>
+        <filter name="repeat" type="boolean" title="filter to show either only repeats or non-repeats" release_status="supported"/>
+        <filter name="schedule_day" type="date" title="filter for subset of broadcasts and webcasts that start on the specified day (BBC time)" release_status="supported"/>
+        <filter name="service_master_brand" type="string" title="filter for subset of broadcasts and webcasts with given service master brand" multiple_values="true"
+                release_status="supported"/>
+        <filter name="sid" type="string" title="filter for subset of broadcasts and webcasts that are on the specified linear service" multiple_values="true"
+                release_status="supported"/>
+        <filter name="start_from" type="datetime" title="filter for subset of broadcasts and webcasts that start on or later than the specified datetime"
+                release_status="supported"/>
+        <filter name="start_to" type="datetime" title="filter for subset of broadcasts and webcasts that start on or earlier than the specified datetime"
+                release_status="supported"/>
+        <filter name="version" type="PID" title="filter for subset of broadcasts and webcasts with given PID as their parent version" multiple_values="true"
+                release_status="supported"/>
+    </filters>
+    <mixins>
+        <mixin name="images" title="mixin to add image information for broadcasts and webcasts" release_status="supported"
+               href="/nitro/api/schedules?mixin=images&amp;mixin=ancestor_titles&amp;page=1&amp;schedule_day_from=2015-12-25&amp;schedule_day_to=2015-12-26&amp;sid=bbc_four_hd&amp;sort=start_date"/>
+        <mixin name="titles" title="return ancestor programme titles" release_status="deprecated" deprecated_since="2014-01-31" replaced_by="ancestor_titles"
+               href="/nitro/api/schedules?mixin=titles&amp;mixin=ancestor_titles&amp;page=1&amp;schedule_day_from=2015-12-25&amp;schedule_day_to=2015-12-26&amp;sid=bbc_four_hd&amp;sort=start_date"/>
+    </mixins>
+    <deprecations>
+        <deprecated name="titles" type="mixin" deprecated_since="2014-01-31" replaced_by="ancestor_titles" replacement_type="mixin"/>
+        <deprecated name="n:image" type="element" deprecated_since="2014-07-09" replaced_by="images" replacement_type="mixin"/>
+    </deprecations>
+</nitro>

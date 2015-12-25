@@ -24,16 +24,22 @@ class ScheduleFetcher() extends Actor with ActorLogging {
       val wsResponse = Await.result(wsRequest.get(), 120.seconds)
       sender() ! toScheduleResponse(request, wsResponse)
 
-    case request@ScheduleRequest(_, _, _, _, retry) if retry < maxRetries =>
-      scheduleRetry(request, retry)
+    case request@ScheduleRequest(_, _, _, _, retry) =>
+      if (retry < maxRetries)
+        scheduleRetry(request, retry)
+      else
+        log.warning(s"Giving up trying to retrieve schedule for request $request after $retry tries.")
 
     case request@ProgramAvailabilityRequest(program, 0) =>
       val wsRequest = createAvailabilityRequest(program, ws)
       val wsResponse = Await.result(wsRequest.get(), 120.seconds)
       sender() ! toAvailabilityResponse(request, program, wsResponse)
 
-    case request@ProgramAvailabilityRequest(_, retry) if retry < maxRetries =>
-      scheduleRetry(request, retry)
+    case request@ProgramAvailabilityRequest(program, retry) =>
+      if (retry < maxRetries)
+        scheduleRetry(request, retry)
+      else
+        log.warning(s"Giving up trying to get availability of $program after $retry tries.")
 
     case Retry(request) =>
       log.warning(s"Retrying request ${request.nextTry}")
@@ -42,11 +48,17 @@ class ScheduleFetcher() extends Actor with ActorLogging {
     case StartUp() =>
       log.info("Starting up NingWSClient")
       ws = new NingWSClient(new Builder().build())
+
+    case StartUpForTest(client) =>
+      log.info("Configured for testing with another NingWSClient")
+      ws = client
   }
 
   override def postStop(): Unit = {
-    log.info("Shutting down NingWSClient")
-    ws.close()
+    if(ws != null) {
+      log.info("Shutting down NingWSClient")
+      ws.close()
+    }
     super.postStop()
   }
 
@@ -62,10 +74,13 @@ class ScheduleFetcher() extends Actor with ActorLogging {
 
 object ScheduleFetcher {
   val maxRetries = 3
+  val availabilityUrl = "http://programmes.api.bbc.com/nitro/api/programmes"
+  val schedulesUrl = "http://programmes.api.bbc.com/nitro/api/schedules"
 
   object Protocol {
     case class Retry(request: Retryable)
     case class StartUp()
+    case class StartUpForTest(ws: NingWSClient)
   }
 
   def toScheduleResponse(request: ScheduleRequest, wsResponse: WSResponse) =
@@ -85,7 +100,7 @@ object ScheduleFetcher {
     else ProgramAvailabilityResponse(program, isAvailable = false)
 
   def createAvailabilityRequest(program: ScheduledProgram, ws: NingWSClient): WSRequest = {
-    ws.url("http://programmes.api.bbc.com/nitro/api/programmes")
+    ws.url(availabilityUrl)
       .withQueryString("pid" -> program.pid)
       .withQueryString("availability" -> "available")
       .withQueryString("availability_entity_type" -> "episode")
@@ -95,8 +110,8 @@ object ScheduleFetcher {
       .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
   }
 
-  def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int, ws: NingWSClient): WSRequest =
-    ws.url("http://programmes.api.bbc.com/nitro/api/schedules")
+  def createScheduleRequest(serviceId: String, from: DateTime, to: DateTime, pageToFetch: Int, ws: NingWSClient): WSRequest = {
+    ws.url(schedulesUrl)
       .withQueryString("page" -> pageToFetch.toString)
       .withQueryString("sort" -> "start_date")
       .withQueryString("schedule_day_from" -> from.toString("YYYY-MM-dd"))
@@ -104,6 +119,7 @@ object ScheduleFetcher {
       .withQueryString("sid" -> serviceId)
       .withQueryString("mixin" -> "ancestor_titles")
       .withQueryString("api_key" -> "kheF9DxuX0j7lgAleY7Ewp57USjYDsl2")
+  }
 
   def recoverableError(wsResponse: WSResponse): Boolean =
     wsResponse.status == Status.INTERNAL_SERVER_ERROR ||
@@ -117,15 +133,19 @@ object ScheduleFetcher {
   def toProgramList(page: Node): Seq[ScheduledProgram] =
     (page \\ "broadcast").map(node => toProgram(node))
 
-  def toProgram(node: Node) = ScheduledProgram(
-    (node \ "service" \ "@sid").text,
-    toEpisodePid(node),
-    (node \ "published_time" \ "@start").text,
-    (node \ "published_time" \ "@end").text,
-    (node \ "ancestor_titles" \ "brand" \ "title").text + " " +
-      (node \ "ancestor_titles" \ "series" \ "title").text + " " +
-      (node \ "ancestor_titles" \ "episode" \ "title").text
-  )
+  def toProgram(node: Node) = {
+    val brandTitle = (node \ "ancestor_titles" \ "brand" \ "title").text
+    val seriesTitle = (node \ "ancestor_titles" \ "series" \ "title").text
+    val episodeTitle = (node \ "ancestor_titles" \ "episode" \ "title").text
+    val titles = Seq(brandTitle, seriesTitle, episodeTitle).filter(!_.isEmpty).mkString(" ")
+    ScheduledProgram(
+      (node \ "service" \ "@sid").text,
+      toEpisodePid(node),
+      (node \ "published_time" \ "@start").text,
+      (node \ "published_time" \ "@end").text,
+      titles
+    )
+  }
 
   def toEpisodePid(node: Node) = {
     val element = node \ "broadcast_of"
