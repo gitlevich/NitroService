@@ -21,7 +21,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
   override def receive: Receive = {
     case request@ScheduleRequest(serviceId, from, to, pageToFetch, 0) =>
       val wsRequest = createScheduleRequest(serviceId, from, to, pageToFetch, ws)
-      val wsResponse = Await.result(wsRequest.get(), 120 seconds)
+      val wsResponse = Await.result(wsRequest.get(), 120.seconds)
       sender() ! toScheduleResponse(request, wsResponse)
 
     case request@ScheduleRequest(_, _, _, _, retry) if retry < maxRetries =>
@@ -29,7 +29,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
 
     case request@ProgramAvailabilityRequest(program, 0) =>
       val wsRequest = createAvailabilityRequest(program, ws)
-      val wsResponse = Await.result(wsRequest.get(), 120 seconds)
+      val wsResponse = Await.result(wsRequest.get(), 120.seconds)
       sender() ! toAvailabilityResponse(request, program, wsResponse)
 
     case request@ProgramAvailabilityRequest(_, retry) if retry < maxRetries =>

@@ -37,6 +37,15 @@ class Coordinator() extends Actor with FSM[State, Stats] {
       log.info(s"Shutting down the actor system after $timeoutToTerminate of inactivity.")
       context.system.terminate()
       goto(Terminated) using stats
+
+    // This is for testing only, to inject the test probes
+    case Event(ConfigureForTest(w, f, rate, state), stats) =>
+      writer = w
+      fetcher = f
+      throttler = context.actorOf(Props(new TimerBasedThrottler(rate)), "throttlerForTest")
+      throttler ! SetTarget(Some(fetcher))
+
+      goto(state) using stats
   }
 
   when(Active, stateTimeout = timeoutToEndSession) {
@@ -99,6 +108,7 @@ private[bbc] object Coordinator {
 
   object Protocol {
     case class StartExtraction(file: File, rate: Rate)
+    case class ConfigureForTest(writer: ActorRef, fetcher: ActorRef, rate: Rate, state: State)
     case class ProgramAvailabilityRequest(program: ScheduledProgram, retryAttempt: Int = 0) extends Retryable {
       def nextTry = copy(retryAttempt = retryAttempt + 1)
     }
