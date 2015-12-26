@@ -5,6 +5,7 @@ import java.io.File
 import akka.actor._
 import akka.contrib.throttle.Throttler.Rate
 import com.gracenote.extraction.bbc.akka.Coordinator.Protocol._
+import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 
 import scala.concurrent.duration._
@@ -16,7 +17,9 @@ object NitroService extends App {
   val to = DateTime.parse(args(1))
   require(from.isBefore(to), "Start date must be before end date")
 
-  val outputFileName = "schedules.csv"
+  val config = ConfigFactory.load()
+  val outputFileName = config.getString("nitro.output_file")
+
   val serviceIds = Source.fromInputStream(getClass.getResourceAsStream("/providers.txt")).getLines()
 
   val coordinator = ActorSystem("Schedules").actorOf(Props(new Coordinator()), "coordinator")
