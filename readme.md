@@ -1,6 +1,6 @@
 ## Configuration
 
-Before you can run the service, you need to add to the classpath a new file with name `application.conf` and the following content:
+Before you can run the service, you need to create the file `application.conf` on the classpath and put there the following incantation:
 
 `nitro = {
     fetcher = {
@@ -10,12 +10,12 @@ Before you can run the service, you need to add to the classpath a new file with
   }
 }`
 
-Please replace "the-actual-api-key" with your API key. 
+`"the-actual-api-key"` needs to be replaced with your actual API key. 
 
-If you care to see application logs, also add this fragment:
+If you care to see the application log written on console, also add this fragment:
 
 `akka {
    loglevel = "INFO"
  }`
  
-The channels from which the app will extract schedule information is listed in channels.txt file.
+The channels for which the app will extract schedules are listed in `channels.txt` file.
