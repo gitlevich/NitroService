@@ -21,7 +21,7 @@ class FileWriter() extends Actor with ActorLogging {
     case OpenFile(file) =>
       csvWriter = CSVWriter.open(file)
       csvWriter.writeRow(Seq("service", "pid", "title", "start_time", "end_time"))
-      log.info(s"Created new file $file")
+      log.info(s"Writing output to file '${file.getAbsolutePath}'")
   }
 
   override def postStop() {

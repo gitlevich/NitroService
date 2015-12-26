@@ -18,4 +18,4 @@ If you care to see application logs, also add this fragment:
    loglevel = "INFO"
  }`
  
-The channels from which the app will extract schedule information is listed in providers.txt file.
+The channels from which the app will extract schedule information is listed in channels.txt file.

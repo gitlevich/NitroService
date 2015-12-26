@@ -30,6 +30,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
     case request@ScheduleRequest(serviceId, from, to, pageToFetch, 0) =>
       val wsRequest = createScheduleRequest(serviceId, from, to, pageToFetch, ws)
       val wsResponse = Await.result(wsRequest.get(), 120.seconds)
+      log.info(s"Processing $request")
       sender() ! toScheduleResponse(request, wsResponse)
 
     case request@ScheduleRequest(_, _, _, _, retry) =>
@@ -41,6 +42,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
     case request@ProgramAvailabilityRequest(program, 0) =>
       val wsRequest = createAvailabilityRequest(program, ws)
       val wsResponse = Await.result(wsRequest.get(), 120.seconds)
+      log.info(s"Processing $request")
       sender() ! toAvailabilityResponse(request, program, wsResponse)
 
     case request@ProgramAvailabilityRequest(program, retry) =>
@@ -50,7 +52,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
         log.warning(s"Giving up trying to get availability of $program after $retry tries.")
 
     case Retry(request) =>
-      log.warning(s"Retrying request ${request.nextTry}")
+      log.warning(s"Retrying ${request.nextTry}")
       self ! request.nextTry
 
     case StartUp() =>
@@ -73,7 +75,7 @@ class ScheduleFetcher() extends Actor with ActorLogging {
   private def scheduleRetry(request: Retryable, retry: Int): Unit = {
     val delay = calculateDelay(retry)
 
-    log.warning(s"Scheduling $retry retry in ${delay.toSeconds} seconds for request $request")
+    log.info(s"Scheduling $retry retry in ${delay.toSeconds} seconds for request $request")
     context.system.scheduler.scheduleOnce(delay, self, Retry(request))
   }
 }

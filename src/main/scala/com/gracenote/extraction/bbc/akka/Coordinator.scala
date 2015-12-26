@@ -44,6 +44,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
 
     // This is for testing only, to inject the test probes
     case Event(ConfigureForTest(w, f, rate, state), stats) =>
+      log.info(s"Starting in test configuration")
       writer = w
       fetcher = f
       throttler = context.actorOf(Props(new TimerBasedThrottler(rate)), "throttlerForTest")
@@ -65,7 +66,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
       stay() using stats
 
     case Event(ProgramAvailabilityResponse(program, isAvailable), stats) =>
-      if (isAvailable) writer ! program else log.info(s"$program is not available")
+      if (isAvailable) writer ! program else log.info(s"Not available: $program")
       stay() using stats
 
     case Event(UnrecoverableError(request, message), stats) =>
@@ -75,9 +76,7 @@ class Coordinator() extends Actor with FSM[State, Stats] {
     case Event(StateTimeout, stats) =>
       log.info(s"The ingest session seems to have finished: no activity for $sessionTimeout.")
       stats.fileName.foreach(fileName => log.info(s"The result will be saved in '$fileName'"))
-      val sessionDuration =
-        FiniteDuration(DateTime.now().getMillis - stats.startTime.getMillis, TimeUnit.MILLISECONDS).toCoarsest
-      log.info(s"The session took $sessionDuration.")
+      log.info(s"The session took ${calculateDuration(stats)}.")
 
       writer ! PoisonPill
       throttler ! PoisonPill
@@ -114,6 +113,12 @@ private[bbc] object Coordinator {
   case class ScheduledProgram(sid: String, pid: String, startTime: String, endTime: String, title: String)
 
   trait Retryable {def nextTry: Retryable}
+
+  def calculateDuration(stats: Stats): FiniteDuration =
+    FiniteDuration(
+      DateTime.now().getMillis - stats.startTime.getMillis,
+      TimeUnit.MILLISECONDS).minus(sessionTimeout
+    ).toMinutes.minutes
 
   object Protocol {
     case class StartExtraction(file: File, rate: Rate)
